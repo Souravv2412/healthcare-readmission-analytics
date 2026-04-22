@@ -67,6 +67,3 @@ Open: `http://127.0.0.1:5000`
 - [Priyanka Sharma](https://github.com/Priyanka-Sharma20)
 - [Sakshi Thakur](https://github.com/sakshiithakur26)
 
-## Notes
-- All em dashes were removed from app/notebook text for a cleaner, natural writing style.
-- EDA images were extracted from notebook outputs and organized for portfolio presentation.
