@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block breadcrumb %}Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- ── Hero ────────────────────────────────────────────────── -->
+<div class="hero-card fade-up">
+  <div class="hero-eyebrow">Healthcare Analytics · University Final Project</div>
+  <h1 class="hero-title">Predicting <em>30-Day</em><br>Hospital Readmissions</h1>
+  <p class="hero-desc">
+    A complete machine-learning pipeline on the Diabetes 130-US Hospitals dataset  - 
+    from data audit through feature engineering, statistical hypothesis testing, and
+    gradient-boosted risk modelling.
+  </p>
+  <div class="hero-meta">
+    <span class="hero-meta-item"><i data-feather="database"></i> 101,766 encounters</span>
+    <span class="hero-meta-item"><i data-feather="map-pin"></i> 130 US hospitals</span>
+    <span class="hero-meta-item"><i data-feather="calendar"></i> 1999 – 2008</span>
+    <span class="hero-meta-item"><i data-feather="cpu"></i> LightGBM &amp; XGBoost</span>
+  </div>
+</div>
+
+<!-- ── KPI Metrics ─────────────────────────────────────────── -->
+<div class="metric-grid mb-28">
+  <div class="metric-card blue fade-up fade-up-1">
+    <div class="metric-icon blue"><i data-feather="database"></i></div>
+    <div class="metric-value">101,766</div>
+    <div class="metric-label">Hospital Encounters</div>
+    <div class="metric-sub">71,518 unique patients</div>
+  </div>
+  <div class="metric-card red fade-up fade-up-2">
+    <div class="metric-icon red"><i data-feather="alert-circle"></i></div>
+    <div class="metric-value">11.2%</div>
+    <div class="metric-label">30-Day Readmission Rate</div>
+    <div class="metric-sub">11,357 positive cases · 8:1 imbalance</div>
+  </div>
+  <div class="metric-card green fade-up fade-up-3">
+    <div class="metric-icon green"><i data-feather="award"></i></div>
+    <div class="metric-value">0.680</div>
+    <div class="metric-label">Best ROC-AUC (XGBoost)</div>
+    <div class="metric-sub">vs. 0.50 random baseline</div>
+  </div>
+  <div class="metric-card amber fade-up fade-up-4">
+    <div class="metric-icon amber"><i data-feather="target"></i></div>
+    <div class="metric-value">54.7%</div>
+    <div class="metric-label">Best Recall (XGBoost)</div>
+    <div class="metric-sub">High-risk patients identified</div>
+  </div>
+  <div class="metric-card purple fade-up fade-up-5">
+    <div class="metric-icon purple"><i data-feather="layers"></i></div>
+    <div class="metric-value">47</div>
+    <div class="metric-label">Features After Cleaning</div>
+    <div class="metric-sub">From 50 raw columns</div>
+  </div>
+  <div class="metric-card blue fade-up fade-up-6">
+    <div class="metric-icon blue"><i data-feather="check-square"></i></div>
+    <div class="metric-value">4/4</div>
+    <div class="metric-label">Hypotheses Supported</div>
+    <div class="metric-sub">All p-values &lt; 0.0001</div>
+  </div>
+</div>
+
+<!-- ── Two-column: target + pipeline ──────────────────────── -->
+<div class="grid-2 mb-28">
+
+  <!-- Class imbalance chart -->
+  <div class="card fade-up">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Target Variable Distribution</div>
+        <div class="card-subtitle">30-Day Readmission · Binary Classification</div>
+      </div>
+      <span class="badge badge-red">Class Imbalanced</span>
+    </div>
+    <div class="card-body">
+      <div class="chart-box">
+        <canvas id="classChart"></canvas>
+      </div>
+      <div class="alert alert-amber mt-16">
+        <strong>⚠ Imbalance Alert</strong>
+        8:1 negative-to-positive ratio. Accuracy is misleading  -  optimise for
+        Recall and ROC-AUC, not accuracy.
+      </div>
+    </div>
+  </div>
+
+  <!-- Pipeline overview -->
+  <div class="card fade-up fade-up-2">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Analysis Pipeline</div>
+        <div class="card-subtitle">End-to-end modelling workflow</div>
+      </div>
+    </div>
+    <div class="card-body">
+      {% set pipeline_steps = [
+        ("search",       "01 · Data Audit",         "101,766 encounters · 50 columns · quality checks",             "blue"),
+        ("filter",       "02 · Data Cleaning",       "Missingness handling · target binarisation · label mapping",   "teal"),
+        ("bar-chart-2",  "03 · EDA",                 "Prior utilisation · discharge patterns · medication signals",  "blue"),
+        ("check-square", "04 · Hypothesis Testing",  "Mann-Whitney U & Chi-Square · 4 hypotheses · all p<0.0001",   "green"),
+        ("cpu",          "05 · ML Models",           "LightGBM · XGBoost · ROC-AUC 0.68 · Recall 54.7%",           "amber"),
+        ("activity",     "Risk Predictor",           "Real-time risk scoring interface",                             "purple"),
+      ] %}
+      <div class="step-list">
+        {% for icon, title, desc, color in pipeline_steps %}
+        <div style="display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border-light);">
+          <div style="width:32px;height:32px;border-radius:8px;background:var(--{{ color }}-light,#EFF6FF);color:var(--{{ color }},var(--blue));display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i data-feather="{{ icon }}" style="width:14px;height:14px;"></i>
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:13px;">{{ title }}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">{{ desc }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Top EDA Findings ────────────────────────────────────── -->
+<div class="card mb-28 fade-up">
+  <div class="card-header">
+    <div>
+      <div class="card-title">Top Readmission Risk Factors</div>
+      <div class="card-subtitle">Key insights from exploratory data analysis</div>
+    </div>
+    <a href="{{ url_for('eda') }}" class="btn btn-secondary">
+      <i data-feather="arrow-right"></i> Full EDA
+    </a>
+  </div>
+  <div class="card-body">
+    <div class="grid-2" style="gap:12px;">
+      {% for f in eda_findings %}
+      <div class="insight-tile">
+        <div class="insight-rank" style="opacity:0.3;">{{ f.rank }}</div>
+        <div class="insight-icon"><i data-feather="{{ f.icon }}"></i></div>
+        <div>
+          <div class="insight-title">{{ f.feature }}</div>
+          <div class="insight-finding">{{ f.finding }}</div>
+          <div class="insight-impl">→ {{ f.implication }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- ── Model comparison summary ────────────────────────────── -->
+<div class="card mb-28 fade-up">
+  <div class="card-header">
+    <div>
+      <div class="card-title">Recommended Models</div>
+      <div class="card-subtitle">Top-2 deployment candidates based on Recall &amp; PR-AUC</div>
+    </div>
+    <a href="{{ url_for('models') }}" class="btn btn-secondary">
+      <i data-feather="arrow-right"></i> Full Comparison
+    </a>
+  </div>
+  <div class="card-body">
+    <div class="grid-2" style="gap:16px;">
+      {% for m in [lgbm, xgb] %}
+      <div class="model-card recommended">
+        <div class="model-rec-badge">⭐ Recommended</div>
+        <div class="model-card-header">
+          <div class="model-name" style="color:{{ m.color }}">{{ m.name }}</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:3px;">{{ m.why_selected[:80] }}…</div>
+        </div>
+        <div class="model-metrics">
+          {% set metrics = [
+            ("ROC-AUC",  m.roc_auc, m.color),
+            ("Recall",   m.recall,  "#EF4444"),
+            ("PR-AUC",   m.pr_auc,  "#8B5CF6"),
+            ("F1-Score", m.f1,      "#F59E0B"),
+          ] %}
+          {% for label, val, color in metrics %}
+          <div class="model-metric-row">
+            <span class="model-metric-name">{{ label }}</span>
+            <div class="model-bar-wrap">
+              <div class="model-bar" style="width:{{ (val*100)|round|int }}%;background:{{ color }};opacity:0.7;"></div>
+            </div>
+            <span class="model-metric-val">{{ "%.4f"|format(val) }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- ── Hypothesis summary ─────────────────────────────────── -->
+<div class="card fade-up">
+  <div class="card-header">
+    <div>
+      <div class="card-title">Hypothesis Testing Results</div>
+      <div class="card-subtitle">All 4 hypotheses rejected H₀ (p &lt; 0.0001)</div>
+    </div>
+    <a href="{{ url_for('hypothesis') }}" class="btn btn-secondary">
+      <i data-feather="arrow-right"></i> Full Analysis
+    </a>
+  </div>
+  <div class="card-body">
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Hypothesis</th>
+            <th>Variable</th>
+            <th>Test</th>
+            <th>p-value</th>
+            <th>Effect Size</th>
+            <th>Decision</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for h in hypotheses %}
+          <tr>
+            <td><strong>{{ h.id }}</strong>  -  {{ h.title }}</td>
+            <td><code style="font-size:11px;background:var(--surface-2);padding:2px 6px;border-radius:4px;">{{ h.variable }}</code></td>
+            <td>{{ h.test }}</td>
+            <td class="text-mono text-sm">{{ h.p_value }}</td>
+            <td class="text-mono text-sm">{{ h.effect_type }} = {{ "%.3f"|format(h.effect_size) }} ({{ h.effect_magnitude }})</td>
+            <td>
+              <span class="badge {% if h.decision == 'Reject H₀' %}badge-green{% else %}badge-red{% endif %}">
+                {{ h.decision }}
+              </span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Class distribution chart
+new Chart(document.getElementById('classChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Not Readmitted (88.8%)', 'Readmitted <30d (11.2%)'],
+    datasets: [{
+      data: [90409, 11357],
+      backgroundColor: ['#0EA5E9', '#EF4444'],
+      borderColor: '#FFFFFF',
+      borderWidth: 3,
+      hoverOffset: 6,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '68%',
+    plugins: {
+      legend: { position: 'bottom' },
+      tooltip: {
+        callbacks: {
+          label: ctx => ` ${ctx.label}: ${ctx.parsed.toLocaleString()}`
+        }
+      }
+    }
+  }
+});
+</script>
+{% endblock %}

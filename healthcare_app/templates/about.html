@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+{% block title %}Methodology{% endblock %}
+{% block breadcrumb %}Methodology & About{% endblock %}
+
+{% block content %}
+
+<div class="page-header fade-up">
+  <div class="page-header-eyebrow">About This Project</div>
+  <h1>Methodology &amp; Documentation</h1>
+  <p>A comprehensive overview of the dataset, analytical framework, preprocessing decisions, modelling approach, and known limitations of this healthcare analytics capstone project.</p>
+</div>
+
+<!-- ── Project Overview ──────────────────────────────────────── -->
+<div class="hero-card fade-up mb-28" style="padding:32px 36px;">
+  <div class="hero-eyebrow">University Final Project  -  Healthcare Analytics</div>
+  <h1 class="hero-title" style="font-size:26px;">Predicting <em>30-Day Hospital Readmissions</em><br>in Diabetic Patients</h1>
+  <p class="hero-desc" style="font-size:13px;">
+    Hospital readmissions within 30 days represent a major cost driver for healthcare systems and
+    often signal gaps in post-discharge care. This project develops a binary risk-scoring tool
+    that flags high-risk diabetic patients at the point of discharge, enabling clinical teams
+    to intervene with follow-up calls, medication reviews, and structured care plans.
+  </p>
+  <div class="hero-meta">
+    <span class="hero-meta-item"><i data-feather="database"></i> Diabetes 130-US Hospitals (UCI)</span>
+    <span class="hero-meta-item"><i data-feather="calendar"></i> 1999–2008</span>
+    <span class="hero-meta-item"><i data-feather="map-pin"></i> 130 US Hospitals</span>
+    <span class="hero-meta-item"><i data-feather="users"></i> 101,766 Encounters</span>
+  </div>
+</div>
+
+<div class="grid-2 mb-28 fade-up">
+
+  <!-- Dataset -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Dataset Description</div>
+      <div class="card-subtitle">Diabetes 130-US Hospitals for Years 1999–2008</div>
+    </div>
+    <div class="card-body">
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        {% for label, value in [
+          ("Source",         "UCI Machine Learning Repository"),
+          ("Records",        "101,766 inpatient encounters"),
+          ("Raw Features",   "50 columns across 6 logical groups"),
+          ("Cleaned Features","47 columns after preprocessing"),
+          ("Unique Patients","71,518 (avg 1.42 encounters/patient)"),
+          ("Time Period",    "1999–2008"),
+          ("Hospitals",      "130 US hospitals"),
+          ("Target",         "readmitted (3-class) → readmitted_binary (2-class)"),
+          ("Positive Class", "11.2% (readmission within 30 days)"),
+          ("Imbalance Ratio","8:1 (negative to positive)"),
+        ] %}
+        <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border-light);font-size:12px;">
+          <span style="color:var(--text-muted);font-weight:500;">{{ label }}</span>
+          <span style="color:var(--text-secondary);font-weight:600;text-align:right;max-width:60%;">{{ value }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Analytical Framework -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Analytical Framework</div>
+      <div class="card-subtitle">End-to-end pipeline design decisions</div>
+    </div>
+    <div class="card-body">
+      {% for section, content in [
+        ("Business Objective",
+         "Deliver a risk-scoring tool flagging patients at high risk of 30-day readmission at the point of discharge."),
+        ("Analytical Objective",
+         "Binary classification: 1 = readmitted <30 days, 0 = not readmitted. Evaluated with ROC-AUC and Recall as primary metrics."),
+        ("Success Criteria",
+         "ROC-AUC and Recall are primary metrics. In clinical risk-detection, missing a high-risk patient (false negative) is more costly than a false alarm."),
+        ("Class Imbalance Strategy",
+         "class_weight='balanced' in tree models. XGBoost uses scale_pos_weight. Evaluate on Recall and PR-AUC, not accuracy."),
+        ("Scope",
+         "Data cleaning, EDA, hypothesis testing, model building, evaluation. Out of scope: real-time clinical deployment, live EHR integration."),
+      ] %}
+      <div style="margin-bottom:14px;">
+        <div style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">{{ section }}</div>
+        <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;">{{ content }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Preprocessing Decisions ────────────────────────────────── -->
+<div class="card mb-28 fade-up">
+  <div class="card-header">
+    <div class="card-title">Key Preprocessing Decisions</div>
+    <div class="card-subtitle">Justified choices from the cleaning notebook</div>
+  </div>
+  <div class="card-body">
+    <div class="grid-3">
+      {% for decision, rationale in [
+        ("Drop weight (96.9% missing)",      "Imputing ~97k values would introduce noise rather than signal. No meaningful relationship can be learned."),
+        ("Replace '?' with 'Unknown'",       "Preserves the fact that the value was not recorded  -  absence itself is a clinically meaningful category."),
+        ("Fill NaN with 'Unknown'",          "max_glu_serum and A1Cresult: tests not performed  -  the absence is informative (sicker ER patients often skip elective labs)."),
+        ("Binarise target",                  ">30 and NO collapsed into class 0. This aligns with the clinical question: will this patient return within 30 days?"),
+        ("Age → numeric midpoints",          "Bracket strings ([60-70)) converted to 65  -  enables use as continuous feature in gradient boosting models."),
+        ("Map ID columns to labels",         "Prevents models treating discharge codes as ordinal numbers (e.g. code 3 ≠ 3× code 1). Three NULL codes added manually."),
+        ("Drop identifier columns",          "encounter_id and patient_nbr excluded  -  data leakage risk (model would memorise patients, not learn clinical patterns)."),
+        ("Stratified train/test split",      "80/20 stratified split to preserve 11.2% positive class proportion in both train and test sets."),
+        ("OneHotEncoder with handle_unknown='ignore'",
+         "Handles unseen categories at inference time without crashing. Essential for deployment with new patient data."),
+      ] %}
+      <div style="padding:14px;background:var(--surface-2);border-radius:var(--r-lg);border:1px solid var(--border-light);">
+        <div style="font-weight:700;font-size:12px;color:var(--text-primary);margin-bottom:6px;font-family:var(--font-display);">{{ decision }}</div>
+        <div style="font-size:11px;color:var(--text-muted);line-height:1.6;">{{ rationale }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- ── Hypothesis Framework ───────────────────────────────────── -->
+<div class="card mb-28 fade-up">
+  <div class="card-header">
+    <div class="card-title">Statistical Hypothesis Framework</div>
+    <div class="card-subtitle">Test selection logic and validation approach</div>
+  </div>
+  <div class="card-body">
+    <div class="grid-2">
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:10px;">Test Selection Logic</div>
+        <div style="font-size:12px;color:var(--text-secondary);line-height:1.8;">
+          <div>• <strong>Continuous vs binary target:</strong> Shapiro-Wilk normality check on 5,000-sample subsets. All continuous features violated normality → Mann-Whitney U selected over t-test.</div>
+          <div>• <strong>Categorical vs binary target:</strong> Chi-Square test of independence with expected-count verification (0 cells &lt; 5 in all tests).</div>
+          <div>• <strong>Effect size always reported:</strong> Large n (≈100k) can make trivial differences statistically significant. Cliff's delta and Cramér's V provide practical context.</div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:10px;">Pre-Test Data Validity</div>
+        <div style="font-size:12px;color:var(--text-secondary);line-height:1.8;">
+          <div>• <strong>Impossible readmission exclusion:</strong> 2,423 rows with expired or hospice discharge codes excluded before testing. These patients cannot logically be readmitted within 30 days.</div>
+          <div>• <strong>Analysis sample:</strong> 99,343 rows (from 101,766) at 11.39% readmission rate.</div>
+          <div>• <strong>Significance threshold:</strong> α = 0.05. All four hypotheses produced p &lt; 0.0001.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Limitations ────────────────────────────────────────────── -->
+<div class="card mb-28 fade-up">
+  <div class="card-header">
+    <div class="card-title">Limitations &amp; Caveats</div>
+    <div class="card-subtitle">Honest assessment of project constraints</div>
+  </div>
+  <div class="card-body">
+    <div class="grid-2" style="gap:12px;">
+      {% for title, desc in [
+        ("Dataset Age (1999–2008)",   "The data is 15–25 years old. Clinical protocols, medication landscapes, and hospital management practices have evolved significantly. Model may not generalise to modern populations."),
+        ("Class Imbalance",           "Despite class balancing techniques, the 8:1 ratio means precision remains low (~19%). In clinical deployment, threshold tuning is essential before use."),
+        ("No External Validation",    "The model was evaluated on a held-out test split from the same dataset. Performance on external datasets (different hospitals, different years) is unknown."),
+        ("No Temporal Split",         "Data was split randomly, not chronologically. In practice, models should be trained on earlier years and validated on later years to simulate true prospective deployment."),
+        ("Feature Engineering Scope", "The project used cleaned features directly without extensive engineering (no SHAP analysis, no interaction terms, no utilisation composite score)."),
+        ("Weight Column Loss",        "The weight variable (96.9% missing) was dropped. BMI is a strong clinical predictor  -  its absence is a meaningful data gap for diabetes outcomes."),
+        ("ICD-9 Code Depth",          "diag_1/2/3 were used raw or grouped into broad categories. More granular ICD-9 groupings or comorbidity indices (Charlson, Elixhauser) would likely improve performance."),
+        ("Deployment Gap",            "The trained model artifacts are not pre-computed in this submission. The risk predictor uses an evidence-based rule scorer as a fallback when the model .pkl is not present."),
+      ] %}
+      <div style="padding:14px 16px;background:var(--surface-2);border-radius:var(--r-sm);border-left:3px solid var(--amber);">
+        <div style="font-weight:700;font-size:12px;color:var(--text-primary);margin-bottom:4px;">{{ title }}</div>
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.6;">{{ desc }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- ── References ─────────────────────────────────────────────── -->
+<div class="card fade-up">
+  <div class="card-header">
+    <div class="card-title">References &amp; Citations</div>
+    <div class="card-subtitle">Dataset, tools, and methodological sources</div>
+  </div>
+  <div class="card-body">
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      {% for ref in [
+        "Strack, B., DeShazo, J.P., Gennings, C., et al. (2014). Impact of HbA1c measurement on hospital readmission rates: analysis of 70,000 clinical database patient records. BioMed Research International.",
+        "UCI Machine Learning Repository  -  Diabetes 130-US hospitals for years 1999–2008 Dataset (ID: 296).",
+        "LightGBM: Ke, G., Meng, Q., Finley, T., et al. (2017). LightGBM: A Highly Efficient Gradient Boosting Decision Tree. NIPS 2017.",
+        "XGBoost: Chen, T. & Guestrin, C. (2016). XGBoost: A Scalable Tree Boosting System. KDD 2016.",
+        "Scikit-learn: Pedregosa et al. (2011). Scikit-learn: Machine Learning in Python. JMLR 12, 2825–2830.",
+        "Flask: Pallets Projects  -  Flask web framework (v3.x).",
+        "Chart.js: Chart.js Contributors  -  Open source JavaScript charting library.",
+        "Mann-Whitney U test: Mann, H.B. & Whitney, D.R. (1947). On a test of whether one of two random variables is stochastically larger than the other. Annals of Mathematical Statistics.",
+      ] %}
+      <div style="display:flex;gap:12px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--border-light);">
+        <span style="color:var(--blue);font-family:var(--font-mono);font-size:11px;flex-shrink:0;">[{{ loop.index }}]</span>
+        <span style="font-size:12px;color:var(--text-secondary);line-height:1.6;">{{ ref }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+{% block title %}Data Audit{% endblock %}
+{% block breadcrumb %}Data Audit{% endblock %}
+
+{% block content %}
+
+<div class="page-header fade-up">
+  <div class="page-header-eyebrow">Notebook 01</div>
+  <h1>Data Audit</h1>
+  <p>Comprehensive quality assessment of the raw Diabetes 130-US Hospitals dataset before any cleaning or modelling. Structure, missingness, target balance, and column-group classification.</p>
+</div>
+
+<!-- ── KPIs ─────────────────────────────────────────────────── -->
+<div class="metric-grid mb-28">
+  <div class="metric-card blue fade-up fade-up-1">
+    <div class="metric-icon blue"><i data-feather="database"></i></div>
+    <div class="metric-value">101,766</div>
+    <div class="metric-label">Total Encounters</div>
+    <div class="metric-sub">Inpatient encounters (not unique patients)</div>
+  </div>
+  <div class="metric-card blue fade-up fade-up-2">
+    <div class="metric-icon blue"><i data-feather="columns"></i></div>
+    <div class="metric-value">50</div>
+    <div class="metric-label">Raw Columns</div>
+    <div class="metric-sub">Across 6 logical groups</div>
+  </div>
+  <div class="metric-card amber fade-up fade-up-3">
+    <div class="metric-icon amber"><i data-feather="users"></i></div>
+    <div class="metric-value">71,518</div>
+    <div class="metric-label">Unique Patients</div>
+    <div class="metric-sub">Avg 1.42 encounters per patient</div>
+  </div>
+  <div class="metric-card red fade-up fade-up-4">
+    <div class="metric-icon red"><i data-feather="alert-circle"></i></div>
+    <div class="metric-value">8:1</div>
+    <div class="metric-label">Class Imbalance Ratio</div>
+    <div class="metric-sub">11.2% positive · 88.8% negative</div>
+  </div>
+</div>
+
+<div class="grid-2 mb-28">
+
+  <!-- Column Groups -->
+  <div class="card fade-up">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Column Groups</div>
+        <div class="card-subtitle">50 raw columns across 6 logical groups</div>
+      </div>
+    </div>
+    <div class="card-body">
+      {% for g in column_groups %}
+      <div style="padding:12px 0;border-bottom:1px solid var(--border-light);display:flex;gap:12px;align-items:flex-start;">
+        {% set badge_map = {"dropped":"badge-red","cleaned":"badge-blue","mapped":"badge-teal","kept":"badge-gray","target":"badge-purple"} %}
+        <div style="min-width:90px;">
+          <span class="badge {{ badge_map.get(g.badge, 'badge-gray') }}">{{ g.group }}</span>
+        </div>
+        <div>
+          <div style="font-size:12px;color:var(--text-secondary);">{{ g.description }}</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:3px;font-family:var(--font-mono);">
+            {{ g.columns|join(', ') }}
+          </div>
+          <div style="font-size:11px;color:var(--blue);margin-top:4px;font-weight:600;">→ {{ g.action }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Target Distribution -->
+  <div class="card fade-up fade-up-2">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Target Variable: readmitted</div>
+        <div class="card-subtitle">Three categories → binarised for classification</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="chart-box mb-16">
+        <canvas id="targetChart"></canvas>
+      </div>
+      <div class="alert alert-red">
+        <strong>Class Imbalance Detected</strong>
+        Only 11.2% of encounters result in readmission within 30 days.
+        Recall and ROC-AUC are the appropriate primary metrics  -  not accuracy.
+      </div>
+      <div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;text-align:center;">
+        {% for label, count, pct, color in [("NO", 54864, 53.9, "blue"), (">30", 35545, 34.9, "amber"), ("<30", 11357, 11.2, "red")] %}
+        <div style="padding:12px;background:var(--surface-2);border-radius:var(--r-sm);border:1px solid var(--border-light);">
+          <div style="font-family:var(--font-mono);font-size:16px;font-weight:700;color:var(--text-primary);">{{ "{:,}".format(count) }}</div>
+          <div style="font-size:11px;font-weight:700;font-family:var(--font-mono);color:var(--{{ color }});">{{ label }}</div>
+          <div style="font-size:11px;color:var(--text-muted);">{{ pct }}%</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Missing Values ──────────────────────────────────────── -->
+<div class="card mb-28 fade-up">
+  <div class="card-header">
+    <div>
+      <div class="card-title">Missing Value Analysis</div>
+      <div class="card-subtitle">Genuine NaN and '?' placeholder strings identified separately</div>
+    </div>
+    <span class="badge badge-amber">{{ missing_values|length }} columns affected</span>
+  </div>
+  <div class="card-body">
+
+    <div class="callout blue mb-16">
+      <svg class="callout-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <div>
+        <div class="callout-title">Two types of missingness</div>
+        <div class="callout-body">Type A: '?' placeholder strings in categorical columns (invisible to isnull()). Type B: Genuine NaN in lab-test columns where the test was never ordered.</div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Column</th>
+            <th>Missing Count</th>
+            <th>Missing %</th>
+            <th>Type</th>
+            <th>Action Taken</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in missing_values %}
+          <tr>
+            <td><code style="font-size:11px;background:var(--surface-2);padding:2px 7px;border-radius:4px;">{{ m.column }}</code></td>
+            <td class="text-mono text-sm">{{ "{:,}".format(m.count) }}</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="progress-bar-wrap" style="width:80px;">
+                  <div class="progress-bar" style="width:{{ m.pct|int }}%;background:{% if m.pct > 50 %}var(--red){% elif m.pct > 20 %}var(--amber){% else %}var(--blue){% endif %};"></div>
+                </div>
+                <span class="text-mono text-sm">{{ m.pct }}%</span>
+              </div>
+            </td>
+            <td><span class="badge {% if '?' in m.type %}badge-amber{% else %}badge-blue{% endif %}">{{ m.type }}</span></td>
+            <td style="font-size:12px;color:var(--text-secondary);">{{ m.action }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── Key Column Observations ────────────────────────────── -->
+<div class="grid-3 fade-up">
+  {% for obs in [
+    ("Weight Column", "96.9% missing (98,569 values). Imputing ~97k values would introduce noise rather than signal.", "Dropped from dataset entirely.", "red", "trash-2"),
+    ("Identifier Columns", "encounter_id (100% unique) and patient_nbr would cause data leakage if included  -  the model could memorise patients.", "Excluded before modelling.", "amber", "shield-off"),
+    ("Age Column", "Stored as decade brackets ([60-70)). Concentrated 60–80 age range  -  typical for diabetic inpatients.", "Converted to numeric midpoints.", "blue", "hash"),
+    ("Lab Test Columns", "max_glu_serum (94.7% NaN) and A1Cresult (83.3% NaN). Tests not ordered for most patients  -  absence is informative.", "Filled with 'Unknown' category.", "teal", "activity"),
+    ("Coded ID Columns", "admission_type_id, discharge_disposition_id, admission_source_id store categorical info as misleading numeric codes.", "Mapped to descriptive labels via IDS_mapping.csv.", "purple", "map"),
+    ("Medication Columns", "23 drug columns track individual diabetes medication dosage changes. Sparse but clinically meaningful signals.", "Kept as categorical features.", "green", "droplet"),
+  ] %}
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;transition:var(--t);" onmouseover="this.style.boxShadow='var(--shadow)'" onmouseout="this.style.boxShadow=''">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+      <div style="width:32px;height:32px;border-radius:var(--r-sm);background:var(--{{ obs[4] == 'teal' and 'teal' or obs[4] == 'purple' and 'purple' or obs[4] }}-light, #EFF6FF);color:var(--{{ obs[4] }}, var(--blue));display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i data-feather="{{ obs[4] }}" style="width:14px;height:14px;"></i>
+      </div>
+      <div style="font-weight:700;font-size:13px;font-family:var(--font-display);">{{ obs[0] }}</div>
+    </div>
+    <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;margin-bottom:8px;">{{ obs[1] }}</div>
+    <div style="font-size:11px;color:var(--{{ obs[3] }});font-weight:600;">→ {{ obs[2] }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+new Chart(document.getElementById('targetChart'), {
+  type: 'bar',
+  data: {
+    labels: ['NO (Not Readmitted)', '>30 (Late Readmission)', '<30 (Early Readmission)'],
+    datasets: [{
+      label: 'Count',
+      data: [54864, 35545, 11357],
+      backgroundColor: ['#0EA5E9', '#F59E0B', '#EF4444'],
+      borderRadius: 6,
+      borderSkipped: false,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: { color: 'rgba(0,0,0,0.05)' },
+        ticks: { callback: v => v.toLocaleString() }
+      },
+      x: { grid: { display: false } }
+    }
+  }
+});
+</script>
+{% endblock %}

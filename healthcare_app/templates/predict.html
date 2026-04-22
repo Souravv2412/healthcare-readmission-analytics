@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+{% block title %}Risk Predictor{% endblock %}
+{% block breadcrumb %}30-Day Readmission Risk Predictor{% endblock %}
+
+{% block content %}
+
+<div class="page-header fade-up">
+  <div class="page-header-eyebrow">Live Risk Scoring</div>
+  <h1>Readmission Risk Predictor</h1>
+  <p>Enter patient encounter details to receive a 30-day readmission risk probability and key contributing factors, powered by the LightGBM model trained on the Diabetes 130-US dataset.</p>
+</div>
+
+<div class="callout amber mb-28 fade-up">
+  <svg class="callout-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+  <div>
+    <div class="callout-title">Academic / Research Tool</div>
+    <div class="callout-body">This tool is part of a university final project and is not intended for clinical decision-making. Risk scores are derived from the Diabetes 130-US Hospitals research dataset (1999–2008).</div>
+  </div>
+</div>
+
+<div class="grid-2" style="gap:24px;align-items:flex-start;">
+
+  <!-- ── Form ────────────────────────────────────────────────── -->
+  <div class="card fade-up">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Patient Encounter Details</div>
+        <div class="card-subtitle">Fill in all fields for the most accurate score</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('predict') }}">
+
+        <!-- Utilisation section -->
+        <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid var(--blue-light);">
+          Prior Utilisation (Strongest Predictors)
+        </div>
+        <div class="predict-form-grid mb-20">
+          {% for fid, label, ftype, options, default, help in features[:5] %}
+          <div class="form-group">
+            <label class="form-label" for="{{ fid }}">{{ label }}</label>
+            {% if ftype == 'number' %}
+            <input type="number" id="{{ fid }}" name="{{ fid }}"
+                   min="{{ options[0] }}" max="{{ options[1] }}"
+                   value="{{ form_values.get(fid, default) }}"
+                   class="form-control" required>
+            {% elif ftype == 'select' %}
+            <select id="{{ fid }}" name="{{ fid }}" class="form-control" required>
+              {% for opt in options %}
+              <option value="{{ opt }}" {% if form_values.get(fid, default) == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+            {% endif %}
+            <div class="form-help">{{ help }}</div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- Clinical section -->
+        <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid #CCFBF1;">
+          Clinical Complexity
+        </div>
+        <div class="predict-form-grid mb-20">
+          {% for fid, label, ftype, options, default, help in features[5:9] %}
+          <div class="form-group">
+            <label class="form-label" for="{{ fid }}">{{ label }}</label>
+            {% if ftype == 'number' %}
+            <input type="number" id="{{ fid }}" name="{{ fid }}"
+                   min="{{ options[0] }}" max="{{ options[1] }}"
+                   value="{{ form_values.get(fid, default) }}"
+                   class="form-control" required>
+            {% endif %}
+            <div class="form-help">{{ help }}</div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- Admission & Medication section -->
+        <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--purple);margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid var(--purple-light);">
+          Admission, Discharge &amp; Medication
+        </div>
+        <div class="predict-form-grid mb-20">
+          {% for fid, label, ftype, options, default, help in features[9:] %}
+          <div class="form-group">
+            <label class="form-label" for="{{ fid }}">{{ label }}</label>
+            {% if ftype == 'number' %}
+            <input type="number" id="{{ fid }}" name="{{ fid }}"
+                   min="{{ options[0] }}" max="{{ options[1] }}"
+                   value="{{ form_values.get(fid, default) }}"
+                   class="form-control" required>
+            {% elif ftype == 'select' %}
+            <select id="{{ fid }}" name="{{ fid }}" class="form-control" required>
+              {% for opt in options %}
+              <option value="{{ opt }}" {% if form_values.get(fid, default) == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+            {% endif %}
+            <div class="form-help">{{ help }}</div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg" style="width:100%;">
+          <i data-feather="activity"></i>
+          Calculate Readmission Risk
+        </button>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- ── Result ──────────────────────────────────────────────── -->
+  <div class="fade-up fade-up-2">
+
+    {% if result %}
+    <!-- Risk result card -->
+    <div class="risk-result mb-20">
+      <div class="risk-header {{ result.risk_band }}">
+        <div>
+          <div style="font-size:12px;opacity:0.7;margin-bottom:4px;text-transform:uppercase;letter-spacing:.1em;">30-Day Readmission Risk</div>
+          <div class="risk-prob">{{ result.probability_pct }}<span>%</span></div>
+          <div class="risk-label">{{ result.risk_label }}</div>
+          <div class="risk-sublabel">Based on {{ result.model_used }}</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:48px;line-height:1;">
+            {% if result.risk_band == 'low' %}🟢
+            {% elif result.risk_band == 'moderate' %}🟡
+            {% elif result.risk_band == 'high' %}🟠
+            {% else %}🔴{% endif %}
+          </div>
+          <div style="font-size:11px;opacity:0.7;margin-top:6px;">
+            Overall avg: 11.2%
+          </div>
+        </div>
+      </div>
+
+      <div class="risk-body">
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:10px;">Key Contributing Factors</div>
+        <div class="risk-drivers">
+          {% for driver in result.key_drivers %}
+          <div class="driver-item">
+            <div class="driver-dot"></div>
+            {{ driver }}
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- Risk band legend -->
+        <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border-light);">
+          <div style="font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:8px;">RISK THRESHOLDS</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            {% for band, label, color in [
+              ("0–10%","Low Risk","#15803D"),
+              ("10–20%","Moderate","#B45309"),
+              ("20–35%","High Risk","#C2410C"),
+              (">35%","Very High","#B91C1C"),
+            ] %}
+            <div style="padding:4px 10px;border-radius:100px;background:{{ color }}18;border:1px solid {{ color }}40;font-size:10px;font-weight:700;color:{{ color }};">
+              {{ band }} · {{ label }}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Raw probability bar -->
+    <div class="card">
+      <div class="card-body">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:12px;font-weight:600;">
+          <span>Risk Probability</span>
+          <span style="color:var(--text-muted);">Positive class baseline: 11.2%</span>
+        </div>
+        <div style="height:12px;background:linear-gradient(90deg, #22C55E 0%, #F59E0B 30%, #EA580C 60%, #EF4444 100%);border-radius:100px;position:relative;">
+          <div style="
+            position:absolute;
+            left:calc({{ [result.probability_pct, 99]|min }}% - 6px);
+            top:-4px;
+            width:20px;height:20px;
+            background:white;
+            border-radius:50%;
+            border:3px solid #0F172A;
+            box-shadow:0 2px 8px rgba(0,0,0,0.3);
+            transition:left 0.5s ease;
+          "></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:10px;color:var(--text-muted);">
+          <span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span>
+        </div>
+      </div>
+    </div>
+
+    {% else %}
+    <!-- Empty state -->
+    <div class="card" style="text-align:center;padding:48px 32px;">
+      <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--teal));display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+        <i data-feather="activity" style="width:32px;height:32px;color:white;"></i>
+      </div>
+      <div style="font-family:var(--font-display);font-size:18px;font-weight:800;margin-bottom:8px;">Risk Score Appears Here</div>
+      <div style="font-size:13px;color:var(--text-muted);line-height:1.7;max-width:280px;margin:0 auto 24px;">
+        Complete the patient encounter form on the left and click "Calculate" to receive a personalised 30-day readmission risk probability.
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;text-align:left;max-width:280px;margin:0 auto;">
+        {% for tip in [
+          "Prior inpatient stays are the #1 risk signal",
+          "Discharge to SNF/rehab elevates risk 2-3×",
+          "Insulin use linked to higher disease severity",
+        ] %}
+        <div style="display:flex;gap:10px;align-items:flex-start;font-size:12px;color:var(--text-secondary);">
+          <i data-feather="arrow-right" style="width:13px;height:13px;flex-shrink:0;margin-top:2px;color:var(--blue);"></i>
+          {{ tip }}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Model info card -->
+    <div class="card mt-20">
+      <div class="card-body">
+        <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">Model Performance Reference</div>
+        {% for label, val, color in [
+          ("ROC-AUC (LightGBM)", "0.6745", "var(--blue)"),
+          ("Recall",             "54.35%",  "var(--red)"),
+          ("Precision",          "18.84%", "var(--green)"),
+          ("PR-AUC",             "0.2403", "var(--purple)"),
+        ] %}
+        <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border-light);font-size:12px;">
+          <span style="color:var(--text-muted);">{{ label }}</span>
+          <span style="font-family:var(--font-mono);font-weight:600;color:{{ color }};">{{ val }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+{% endblock %}

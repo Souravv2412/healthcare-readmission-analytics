@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}Data Cleaning{% endblock %}
+{% block breadcrumb %}Data Cleaning{% endblock %}
+
+{% block content %}
+
+<div class="page-header fade-up">
+  <div class="page-header-eyebrow">Notebook 02</div>
+  <h1>Data Cleaning</h1>
+  <p>Systematic application of the 6-step cleaning plan derived from the audit. Each step is justified by the audit findings and documented with before/after shapes.</p>
+</div>
+
+<!-- ── Before / After ────────────────────────────────────────── -->
+<div class="grid-2 mb-28 fade-up">
+  <div class="card">
+    <div class="card-body" style="display:flex;align-items:center;gap:20px;">
+      <div style="width:56px;height:56px;border-radius:var(--r-lg);background:#FEE2E2;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i data-feather="x-circle" style="width:24px;height:24px;color:var(--red);"></i>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;font-weight:600;">Raw Dataset</div>
+        <div style="font-family:var(--font-display);font-size:26px;font-weight:800;color:var(--text-primary);">101,766 × 50</div>
+        <div style="font-size:12px;color:var(--text-secondary);margin-top:3px;">50 columns · 7 columns with critical issues</div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-body" style="display:flex;align-items:center;gap:20px;">
+      <div style="width:56px;height:56px;border-radius:var(--r-lg);background:var(--green-light);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i data-feather="check-circle" style="width:24px;height:24px;color:var(--green);"></i>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;font-weight:600;">Cleaned Dataset</div>
+        <div style="font-family:var(--font-display);font-size:26px;font-weight:800;color:var(--text-primary);">101,766 × 47</div>
+        <div style="font-size:12px;color:var(--text-secondary);margin-top:3px;">Zero nulls · Binary target · Mapped labels</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Cleaning Steps ─────────────────────────────────────────── -->
+<div class="card mb-28 fade-up">
+  <div class="card-header">
+    <div>
+      <div class="card-title">6-Step Cleaning Pipeline</div>
+      <div class="card-subtitle">Each step derived directly from audit findings</div>
+    </div>
+    <span class="badge badge-green">All steps completed</span>
+  </div>
+  <div class="card-body">
+    <div class="step-list">
+      {% for step in steps %}
+      <div class="step-item fade-up fade-up-{{ loop.index }}">
+        <div class="step-number">{{ step.step }}</div>
+        <div class="step-content">
+          <div class="step-title">{{ step.title }}</div>
+          <div class="step-detail">{{ step.detail }}</div>
+        </div>
+        <div style="flex-shrink:0;">
+          <div style="width:32px;height:32px;border-radius:50%;background:var(--green-light);display:flex;align-items:center;justify-content:center;">
+            <i data-feather="check" style="width:14px;height:14px;color:var(--green);"></i>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- ── Replacement map ─────────────────────────────────────────── -->
+<div class="grid-2 mb-28 fade-up">
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Column Replacement Map</div>
+      <div class="card-subtitle">Original → cleaned replacement</div>
+    </div>
+    <div class="card-body">
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Original Column</th><th>Replaced By</th><th>Reason</th></tr></thead>
+          <tbody>
+            {% for orig, replaced, reason in [
+              ("age",                   "age_numeric",           "Bracket → midpoint numeric"),
+              ("readmitted",            "readmitted_binary",     "3-class → binary target"),
+              ("admission_type_id",     "admission_type",        "Integer codes → text labels"),
+              ("discharge_disposition_id","discharge_disposition","Integer codes → text labels"),
+              ("admission_source_id",   "admission_source",      "Integer codes → text labels"),
+            ] %}
+            <tr>
+              <td><code style="font-size:11px;background:var(--red-light);color:var(--red);padding:2px 7px;border-radius:4px;">{{ orig }}</code></td>
+              <td><code style="font-size:11px;background:var(--green-light);color:#15803D;padding:2px 7px;border-radius:4px;">{{ replaced }}</code></td>
+              <td style="font-size:12px;color:var(--text-muted);">{{ reason }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Missingness Handling Summary</div>
+      <div class="card-subtitle">Type A (?) vs Type B (NaN) strategy</div>
+    </div>
+    <div class="card-body">
+      {% for strategy, cols, reason in [
+        ("Replace '?' → 'Unknown'",
+         ["race", "payer_code", "medical_specialty", "diag_1", "diag_2", "diag_3"],
+         "Preserve the fact that the value was not recorded  -  absence is its own category."),
+        ("Fill NaN → 'Unknown'",
+         ["max_glu_serum", "A1Cresult"],
+         "Lab tests not performed  -  the absence itself is clinically informative."),
+        ("Drop column entirely",
+         ["weight", "encounter_id", "patient_nbr"],
+         "97% missing (weight), unique identifiers (encounter_id, patient_nbr)."),
+      ] %}
+      <div style="padding:12px 0;border-bottom:1px solid var(--border-light);">
+        <div style="font-weight:700;font-size:13px;margin-bottom:6px;color:var(--text-primary);">{{ strategy }}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px;">
+          {% for c in cols %}
+          <code style="font-size:10px;background:var(--surface-2);padding:2px 7px;border-radius:4px;border:1px solid var(--border);">{{ c }}</code>
+          {% endfor %}
+        </div>
+        <div style="font-size:12px;color:var(--text-secondary);">{{ reason }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Final dataset info ──────────────────────────────────────── -->
+<div class="card fade-up">
+  <div class="card-header">
+    <div class="card-title">Final Cleaned Dataset  -  Column List (47 features)</div>
+    <div class="card-subtitle">Saved to data/processed/cleaned_data.csv</div>
+  </div>
+  <div class="card-body">
+    <div style="display:flex;flex-wrap:wrap;gap:6px;">
+      {% for col in [
+        "race","gender","time_in_hospital","payer_code","medical_specialty",
+        "num_lab_procedures","num_procedures","num_medications",
+        "number_outpatient","number_emergency","number_inpatient",
+        "diag_1","diag_2","diag_3","number_diagnoses","max_glu_serum","A1Cresult",
+        "metformin","repaglinide","nateglinide","chlorpropamide","glimepiride",
+        "acetohexamide","glipizide","glyburide","tolbutamide","pioglitazone",
+        "rosiglitazone","acarbose","miglitol","troglitazone","tolazamide",
+        "examide","citoglipton","insulin","glyburide-metformin","glipizide-metformin",
+        "glimepiride-pioglitazone","metformin-rosiglitazone","metformin-pioglitazone",
+        "change","diabetesMed",
+        "readmitted_binary","age_numeric","admission_type",
+        "discharge_disposition","admission_source"
+      ] %}
+      <code style="font-size:11px;background:var(--surface-2);border:1px solid var(--border);padding:3px 9px;border-radius:4px;color:var(--text-secondary);">{{ col }}</code>
+      {% endfor %}
+    </div>
+    <div class="alert alert-green mt-16">
+      <strong>✓ Clean dataset ready</strong>
+      101,766 rows · 47 columns · Zero null values after cleaning.
+      readmitted_binary is the model target (11.2% positive class).
+    </div>
+  </div>
+</div>
+
+{% endblock %}

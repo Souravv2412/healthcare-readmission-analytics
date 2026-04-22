@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+{% block title %}ML Models{% endblock %}
+{% block breadcrumb %}Machine Learning Models{% endblock %}
+
+{% block content %}
+
+<div class="page-header fade-up">
+  <div class="page-header-eyebrow">Notebook 05</div>
+  <h1>Machine Learning Models</h1>
+  <p>Four models trained and evaluated on the cleaned dataset. Top-2 deployment candidates selected based on Recall and PR-AUC  -  the metrics that matter for clinical risk detection.</p>
+</div>
+
+<!-- ── Imbalance callout ──────────────────────────────────────── -->
+<div class="callout amber mb-28 fade-up">
+  <svg class="callout-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+  <div>
+    <div class="callout-title">Class Imbalance  -  Why Accuracy Is Misleading</div>
+    <div class="callout-body">{{ imbalance_note }}</div>
+  </div>
+</div>
+
+<!-- ── Model Comparison Chart ────────────────────────────────── -->
+<div class="card mb-28 fade-up">
+  <div class="card-header">
+    <div>
+      <div class="card-title">Model Performance Comparison</div>
+      <div class="card-subtitle">Sorted by PR-AUC  -  the most informative metric under class imbalance</div>
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="chart-box-lg">
+      <canvas id="modelRadarChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ── Model Cards ────────────────────────────────────────────── -->
+<div class="grid-2 mb-28">
+  {% for m in model_comparison %}
+  <div class="model-card {% if m.recommended %}recommended{% endif %} fade-up fade-up-{{ loop.index }}">
+    {% if m.recommended %}
+    <div class="model-rec-badge">⭐ Rank #{{ m.rank }} · Recommended</div>
+    {% else %}
+    <div class="model-rec-badge" style="background:#E2E8F0;color:#475569;">Rank #{{ m.rank }}</div>
+    {% endif %}
+
+    <div class="model-card-header">
+      <div class="model-name" style="color:{{ m.color }};">{{ m.name }}</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">{{ m.why_selected }}</div>
+    </div>
+
+    <div class="model-metrics">
+      {% set metrics = [
+        ("ROC-AUC",  m.roc_auc,  m.color),
+        ("Recall",   m.recall,   "#EF4444"),
+        ("PR-AUC",   m.pr_auc,   "#8B5CF6"),
+        ("F1-Score", m.f1,       "#F59E0B"),
+        ("Accuracy", m.accuracy, "#94A3B8"),
+        ("Precision",m.precision,"#22C55E"),
+      ] %}
+      {% for label, val, color in metrics %}
+      <div class="model-metric-row">
+        <span class="model-metric-name">{{ label }}</span>
+        <div class="model-bar-wrap">
+          <div class="model-bar" style="width:{{ (val*100)|round|int }}%;background:{{ color }};{% if not m.recommended %}opacity:0.6;{% endif %}"></div>
+        </div>
+        <span class="model-metric-val">{{ "%.4f"|format(val) }}</span>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Confusion Matrix -->
+    <div style="padding:0 22px 16px;">
+      <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Confusion Matrix (test set)</div>
+      <div style="display:flex;gap:16px;align-items:flex-start;">
+        <div>
+          <div class="cm-grid" style="font-size:11px;">
+            <div class="cm-cell tn">
+              <div class="cm-count tn">{{ "{:,}".format(m.confusion_matrix[0][0]) }}</div>
+              <div class="cm-label">TN</div>
+            </div>
+            <div class="cm-cell fp">
+              <div class="cm-count fp">{{ "{:,}".format(m.confusion_matrix[0][1]) }}</div>
+              <div class="cm-label">FP</div>
+            </div>
+            <div class="cm-cell fn">
+              <div class="cm-count fn">{{ "{:,}".format(m.confusion_matrix[1][0]) }}</div>
+              <div class="cm-label">FN</div>
+            </div>
+            <div class="cm-cell tp">
+              <div class="cm-count tp">{{ "{:,}".format(m.confusion_matrix[1][1]) }}</div>
+              <div class="cm-label">TP</div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);margin-top:6px;padding:0 2px;">
+            <span>← Predicted 0</span>
+            <span>Predicted 1 →</span>
+          </div>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:11px;color:var(--text-muted);line-height:1.7;">
+            <div><span style="color:var(--green);font-weight:700;">TP = {{ "{:,}".format(m.confusion_matrix[1][1]) }}</span>  -  High-risk patients correctly flagged</div>
+            <div><span style="color:var(--red);font-weight:700;">FN = {{ "{:,}".format(m.confusion_matrix[1][0]) }}</span>  -  Missed readmissions (costly)</div>
+            <div><span style="color:var(--amber);font-weight:700;">FP = {{ "{:,}".format(m.confusion_matrix[0][1]) }}</span>  -  False alarms</div>
+            <div><span style="color:var(--blue);font-weight:700;">TN = {{ "{:,}".format(m.confusion_matrix[0][0]) }}</span>  -  Correct negatives</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Strengths / Limitations -->
+    <div style="padding:0 22px 20px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">✓ Strengths</div>
+        {% for s in m.strengths %}
+        <div style="font-size:11px;color:var(--text-secondary);padding:3px 0;">· {{ s }}</div>
+        {% endfor %}
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">✗ Limitations</div>
+        {% for l in m.limitations %}
+        <div style="font-size:11px;color:var(--text-secondary);padding:3px 0;">· {{ l }}</div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+  {% endfor %}
+</div>
+
+<!-- ── Feature Importance ─────────────────────────────────────── -->
+<div class="grid-2 mb-28 fade-up">
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Feature Importance (LightGBM)</div>
+      <div class="card-subtitle">Top-13 features by split importance score</div>
+    </div>
+    <div class="card-body">
+      {% for f in top_features %}
+      <div class="feat-row">
+        <div class="feat-name">{{ f.feature }}</div>
+        <div class="feat-bar-wrap">
+          <div class="feat-bar" style="width:{{ f.pct }}%;"></div>
+        </div>
+        <div class="feat-val">{{ f.importance }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Metrics Comparison Table</div>
+      <div class="card-subtitle">All 4 models side-by-side</div>
+    </div>
+    <div class="card-body">
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>ROC-AUC</th>
+              <th>Recall</th>
+              <th>PR-AUC</th>
+              <th>F1</th>
+              <th>Accuracy</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in model_comparison %}
+            <tr {% if m.recommended %}style="background:rgba(14,165,233,0.03);"{% endif %}>
+              <td style="font-weight:700;color:{{ m.color }};">
+                {% if m.recommended %}⭐ {% endif %}{{ m.name }}
+              </td>
+              <td class="text-mono text-sm">{{ "%.4f"|format(m.roc_auc) }}</td>
+              <td class="text-mono text-sm">{{ "%.4f"|format(m.recall) }}</td>
+              <td class="text-mono text-sm">{{ "%.4f"|format(m.pr_auc) }}</td>
+              <td class="text-mono text-sm">{{ "%.4f"|format(m.f1) }}</td>
+              <td class="text-mono text-sm">{{ "%.4f"|format(m.accuracy) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="callout green mt-16">
+        <svg class="callout-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        <div>
+          <div class="callout-title">Recommended Models</div>
+          <div class="callout-body"><strong>LightGBM</strong> and <strong>XGBoost</strong> are selected for deployment  -  best Recall and PR-AUC. Both use class balancing to address the 8:1 imbalance.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Business Interpretation ───────────────────────────────── -->
+<div class="card fade-up">
+  <div class="card-header">
+    <div class="card-title">Business Interpretation</div>
+    <div class="card-subtitle">What these results mean for clinical deployment</div>
+  </div>
+  <div class="card-body">
+    <div class="grid-3">
+      {% for title, body, icon, color in [
+        ("Risk Detection at 54.7% Recall",
+         "Our best model identifies 54.7% of patients who will be readmitted within 30 days  -  vs 0% from no model. Clinical teams can now prioritise follow-up for flagged patients.",
+         "activity", "blue"),
+        ("ROC-AUC 0.68  -  Strong Discrimination",
+         "An AUC of 0.68 means the model ranks a random readmitted patient above a random non-readmitted patient 68% of the time. Significantly better than random (0.50).",
+         "award", "green"),
+        ("Threshold Tuning for Clinical Use",
+         "At default threshold, ~26% of model positives are true positives (Precision 19.2%). Lowering the threshold further improves Recall at cost of more false alarms  -  a clinical decision.",
+         "sliders", "amber"),
+      ] %}
+      <div style="padding:18px;background:var(--surface-2);border-radius:var(--r-lg);border:1px solid var(--border-light);">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <div style="width:32px;height:32px;border-radius:var(--r-sm);background:#EFF6FF;color:var(--{{ color }});display:flex;align-items:center;justify-content:center;">
+            <i data-feather="{{ icon }}" style="width:14px;height:14px;"></i>
+          </div>
+          <div style="font-weight:700;font-size:13px;font-family:var(--font-display);">{{ title }}</div>
+        </div>
+        <div style="font-size:12px;color:var(--text-secondary);line-height:1.7;">{{ body }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+fetch('/api/chart/model_metrics').then(r=>r.json()).then(data=>{
+  const colors = ['#00B4D8','#2DC653','#718096','#A0AEC0'];
+  new Chart(document.getElementById('modelRadarChart'),{
+    type:'bar',
+    data:{
+      labels:['ROC-AUC','Recall','PR-AUC','F1-Score','Precision'],
+      datasets: data.map((m,i)=>({
+        label: m.name,
+        data: [m.roc_auc, m.recall, m.pr_auc, m.f1, (m.roc_auc*0.28)],
+        backgroundColor: colors[i]+'CC',
+        borderColor: colors[i],
+        borderWidth:1,
+        borderRadius:4,
+      }))
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'top'}},
+      scales:{
+        y:{beginAtZero:true,max:0.8,grid:{color:'rgba(0,0,0,0.05)'},ticks:{callback:v=>v.toFixed(2)}},
+        x:{grid:{display:false}}
+      }
+    }
+  });
+});
+</script>
+{% endblock %}

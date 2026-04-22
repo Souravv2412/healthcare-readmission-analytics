@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}{{ project_title }}{% endblock %}  -  ReadmissionIQ</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}"/>
+  <!-- Feather Icons -->
+  <script src="https://cdn.jsdelivr.net/npm/feather-icons@4.29.0/dist/feather.min.js"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SIDEBAR
+═══════════════════════════════════════════════════════════ -->
+<aside class="sidebar">
+
+  <div class="sidebar-header">
+    <a href="{{ url_for('index') }}" class="sidebar-logo">
+      <div class="sidebar-logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+        </svg>
+      </div>
+      <div class="sidebar-brand">
+        <span class="sidebar-brand-name">ReadmissionIQ</span>
+        <span class="sidebar-brand-sub">Healthcare Analytics</span>
+      </div>
+    </a>
+  </div>
+
+  <div class="sidebar-section-label">Analysis Pipeline</div>
+
+  <nav class="sidebar-nav">
+    {% for item in nav_items %}
+    <a href="{{ item.url }}" class="nav-item {% if active == item.id %}active{% endif %}">
+      <i data-feather="{{ item.icon }}"></i>
+      {{ item.label }}
+    </a>
+    {% endfor %}
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="sidebar-badge">
+      <div class="sidebar-badge-dot"></div>
+      <div class="sidebar-badge-text">
+        <strong>Diabetes 130-US</strong>
+        101,766 encounters · 130 hospitals
+      </div>
+    </div>
+  </div>
+
+</aside>
+
+<!-- ═══════════════════════════════════════════════════════════
+     MAIN
+═══════════════════════════════════════════════════════════ -->
+<div class="main-wrap">
+
+  <!-- Top bar -->
+  <header class="topbar">
+    <div class="topbar-breadcrumb">
+      ReadmissionIQ
+      <span class="sep">/</span>
+      <span>{% block breadcrumb %}Dashboard{% endblock %}</span>
+    </div>
+    <div class="topbar-right">
+      <span class="topbar-tag">
+        <i data-feather="check-circle"></i>
+        Final Project
+      </span>
+      <span class="topbar-dataset">Diabetes 130-US Hospitals · 1999–2008</span>
+    </div>
+  </header>
+
+  <!-- Page content -->
+  <main class="page-content">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <span>ReadmissionIQ  -  Healthcare Analytics Final Project &nbsp;·&nbsp; Diabetes 130-US Hospitals Dataset</span>
+    <span>LightGBM &amp; XGBoost · ROC-AUC 0.68 · Recall 54%</span>
+  </footer>
+
+</div>
+
+<script>
+  // Initialise Feather icons
+  document.addEventListener('DOMContentLoaded', () => {
+    feather.replace({ 'stroke-width': 1.75 });
+  });
+
+  // Chart.js global defaults
+  Chart.defaults.font.family = "'DM Sans', sans-serif";
+  Chart.defaults.font.size   = 12;
+  Chart.defaults.color       = '#94A3B8';
+  Chart.defaults.plugins.legend.labels.boxWidth = 10;
+  Chart.defaults.plugins.legend.labels.padding  = 16;
+  Chart.defaults.plugins.legend.labels.usePointStyle = true;
+  Chart.defaults.plugins.tooltip.backgroundColor = '#0B1D2E';
+  Chart.defaults.plugins.tooltip.titleColor = '#FFFFFF';
+  Chart.defaults.plugins.tooltip.bodyColor  = '#94A3B8';
+  Chart.defaults.plugins.tooltip.borderColor = 'rgba(255,255,255,0.08)';
+  Chart.defaults.plugins.tooltip.borderWidth = 1;
+  Chart.defaults.plugins.tooltip.padding    = 12;
+  Chart.defaults.plugins.tooltip.cornerRadius = 8;
+</script>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

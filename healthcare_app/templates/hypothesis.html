@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% block title %}Hypothesis Testing{% endblock %}
+{% block breadcrumb %}Hypothesis Testing{% endblock %}
+
+{% block content %}
+
+<div class="page-header fade-up">
+  <div class="page-header-eyebrow">Notebook 04</div>
+  <h1>Hypothesis Testing</h1>
+  <p>Formal statistical validation of four EDA-derived hypotheses. Mann-Whitney U used for continuous predictors (normality violated). Chi-Square used for categorical associations.</p>
+</div>
+
+<!-- ── Summary KPIs ──────────────────────────────────────────── -->
+<div class="metric-grid mb-28">
+  <div class="metric-card green fade-up fade-up-1">
+    <div class="metric-icon green"><i data-feather="check-square"></i></div>
+    <div class="metric-value">4 / 4</div>
+    <div class="metric-label">Hypotheses Rejected H₀</div>
+    <div class="metric-sub">All results statistically significant</div>
+  </div>
+  <div class="metric-card blue fade-up fade-up-2">
+    <div class="metric-icon blue"><i data-feather="trending-down"></i></div>
+    <div class="metric-value">&lt;0.0001</div>
+    <div class="metric-label">Lowest p-value</div>
+    <div class="metric-sub">All four tests at p &lt; 0.0001</div>
+  </div>
+  <div class="metric-card amber fade-up fade-up-3">
+    <div class="metric-icon amber"><i data-feather="activity"></i></div>
+    <div class="metric-value">99,343</div>
+    <div class="metric-label">Analysis Sample Size</div>
+    <div class="metric-sub">2,423 impossible-readmission rows excluded</div>
+  </div>
+  <div class="metric-card purple fade-up fade-up-4">
+    <div class="metric-icon purple"><i data-feather="bar-chart-2"></i></div>
+    <div class="metric-value">2</div>
+    <div class="metric-label">Test Types Used</div>
+    <div class="metric-sub">Mann-Whitney U · Chi-Square</div>
+  </div>
+</div>
+
+<!-- ── Methodology note ──────────────────────────────────────── -->
+<div class="callout blue mb-28 fade-up">
+  <svg class="callout-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+  <div>
+    <div class="callout-title">Test Selection Logic &amp; Data Validity</div>
+    <div class="callout-body">
+      <strong>Normality:</strong> Shapiro-Wilk confirmed non-normality in all continuous variables (p ≈ 0 on 5,000 samples) → Mann-Whitney U preferred over t-test.
+      <strong>Categorical:</strong> Chi-Square used with expected-count verification (0 cells &lt;5).
+      <strong>Pre-exclusion:</strong> 2,423 rows with expired/hospice discharge codes removed before testing  -  these patients cannot logically be readmitted.
+      <strong>Effect size:</strong> Always reported alongside p-value, as large n can make trivial differences significant.
+    </div>
+  </div>
+</div>
+
+<!-- ── Hypothesis Cards ──────────────────────────────────────── -->
+<div style="display:flex;flex-direction:column;gap:20px;" class="mb-28">
+  {% for h in hypotheses %}
+  <div class="hyp-card fade-up fade-up-{{ loop.index }}">
+    <div class="hyp-header">
+      <div class="hyp-id {{ h.color }}">{{ h.id }}</div>
+      <div>
+        <div class="hyp-title">{{ h.title }}</div>
+        <div class="hyp-subtitle">{{ h.research_question }}</div>
+      </div>
+      <div style="margin-left:auto;flex-shrink:0;">
+        <span class="hyp-decision {% if 'Reject' in h.decision %}reject{% else %}fail{% endif %}">
+          <i data-feather="{% if 'Reject' in h.decision %}check{% else %}x{% endif %}" style="width:12px;height:12px;"></i>
+          {{ h.decision }}
+        </span>
+      </div>
+    </div>
+
+    <div class="hyp-body">
+
+      <!-- H0 / H1 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div style="padding:10px 14px;background:#FEF2F2;border:1px solid #FECACA;border-radius:var(--r-sm);">
+          <div style="font-size:10px;font-weight:700;color:#991B1B;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">H₀ (Null Hypothesis)</div>
+          <div style="font-size:12px;color:#7F1D1D;">{{ h.h0 }}</div>
+        </div>
+        <div style="padding:10px 14px;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:var(--r-sm);">
+          <div style="font-size:10px;font-weight:700;color:#14532D;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">H₁ (Alternative)</div>
+          <div style="font-size:12px;color:#14532D;">{{ h.h1 }}</div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="hyp-row">
+        <div class="hyp-stat">
+          <div class="hyp-stat-label">Test Used</div>
+          <div class="hyp-stat-value" style="font-size:14px;">{{ h.test }}</div>
+        </div>
+        <div class="hyp-stat">
+          <div class="hyp-stat-label">Variable</div>
+          <div class="hyp-stat-value mono">{{ h.variable }}</div>
+        </div>
+        <div class="hyp-stat">
+          <div class="hyp-stat-label">Test Statistic</div>
+          <div class="hyp-stat-value mono">{{ h.statistic }}</div>
+        </div>
+        <div class="hyp-stat">
+          <div class="hyp-stat-label">p-value</div>
+          <div class="hyp-stat-value mono" style="color:var(--red);">{{ h.p_value }}</div>
+        </div>
+        {% if h.group0_mean is not none %}
+        <div class="hyp-stat">
+          <div class="hyp-stat-label">Mean (Not Readmitted)</div>
+          <div class="hyp-stat-value mono">{{ "%.4f"|format(h.group0_mean) }}</div>
+        </div>
+        <div class="hyp-stat">
+          <div class="hyp-stat-label">Mean (Readmitted &lt;30d)</div>
+          <div class="hyp-stat-value mono" style="color:var(--red);">{{ "%.4f"|format(h.group1_mean) }}</div>
+        </div>
+        {% endif %}
+        <div class="hyp-stat">
+          <div class="hyp-stat-label">Effect Size</div>
+          <div class="hyp-stat-value mono">{{ h.effect_type }} = {{ "%.4f"|format(h.effect_size) }}</div>
+        </div>
+        <div class="hyp-stat">
+          <div class="hyp-stat-label">Effect Magnitude</div>
+          <div class="hyp-stat-value">
+            <span class="badge {% if h.effect_magnitude == 'large' %}badge-red{% elif h.effect_magnitude == 'medium' %}badge-amber{% elif h.effect_magnitude == 'small' %}badge-blue{% else %}badge-gray{% endif %}">
+              {{ h.effect_magnitude }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Why this test -->
+      <div style="padding:10px 14px;background:var(--surface-2);border-radius:var(--r-sm);font-size:12px;color:var(--text-muted);">
+        <strong style="color:var(--text-secondary);">Test rationale:</strong> {{ h.test_reason }}
+      </div>
+
+      <!-- Interpretation -->
+      <div class="hyp-interpretation">
+        <strong style="display:block;margin-bottom:4px;color:var(--text-primary);">Clinical Interpretation</strong>
+        {{ h.interpretation }}
+      </div>
+
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- ── Combined Results Table ────────────────────────────────── -->
+<div class="card fade-up">
+  <div class="card-header">
+    <div class="card-title">Combined Results Summary</div>
+    <div class="card-subtitle">All four hypotheses at a glance  -  sorted by statistical significance</div>
+  </div>
+  <div class="card-body">
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Hypothesis</th>
+            <th>Variable</th>
+            <th>Test</th>
+            <th>Statistic</th>
+            <th>p-value</th>
+            <th>Effect Type</th>
+            <th>Effect Size</th>
+            <th>Magnitude</th>
+            <th>Decision</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for h in hypotheses %}
+          <tr>
+            <td><strong>{{ h.id }}</strong></td>
+            <td><code style="font-size:11px;background:var(--surface-2);padding:2px 6px;border-radius:4px;">{{ h.variable }}</code></td>
+            <td style="font-size:12px;">{{ h.test }}</td>
+            <td class="text-mono text-sm">{{ h.statistic }}</td>
+            <td class="text-mono text-sm" style="color:var(--red);font-weight:700;">{{ h.p_value }}</td>
+            <td style="font-size:12px;">{{ h.effect_type }}</td>
+            <td class="text-mono text-sm">{{ "%.4f"|format(h.effect_size) }}</td>
+            <td>
+              <span class="badge {% if h.effect_magnitude == 'large' %}badge-red{% elif h.effect_magnitude == 'small' %}badge-blue{% else %}badge-gray{% endif %}">
+                {{ h.effect_magnitude }}
+              </span>
+            </td>
+            <td>
+              <span class="badge badge-green">{{ h.decision }}</span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="alert alert-blue mt-16">
+      <strong>Interpretation note</strong>
+      Statistical significance should always be read alongside effect size. In large healthcare datasets (n ≈ 100k), tiny differences become statistically significant. H1 (prior inpatient) and H3 (discharge disposition) show the strongest practical significance.
+    </div>
+  </div>
+</div>
+
+{% endblock %}

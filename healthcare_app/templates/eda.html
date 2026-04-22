@@ -1,0 +1,390 @@
+{% extends "base.html" %}
+{% block title %}EDA{% endblock %}
+{% block breadcrumb %}Exploratory Data Analysis{% endblock %}
+
+{% block content %}
+
+<div class="page-header fade-up">
+  <div class="page-header-eyebrow">Notebook 03</div>
+  <h1>Exploratory Data Analysis</h1>
+  <p>Systematic investigation of readmission drivers across utilisation history, demographics, admission/discharge patterns, clinical complexity, and diabetes medication management.</p>
+</div>
+
+<!-- ── KPIs ──────────────────────────────────────────────────── -->
+<div class="metric-grid mb-28">
+  <div class="metric-card blue fade-up fade-up-1">
+    <div class="metric-icon blue"><i data-feather="trending-up"></i></div>
+    <div class="metric-value">2.2×</div>
+    <div class="metric-label">More Prior Inpatient Stays</div>
+    <div class="metric-sub">Readmitted vs non-readmitted (mean 1.22 vs 0.56)</div>
+  </div>
+  <div class="metric-card red fade-up fade-up-2">
+    <div class="metric-icon red"><i data-feather="alert-triangle"></i></div>
+    <div class="metric-value">2.0×</div>
+    <div class="metric-label">More Prior ER Visits</div>
+    <div class="metric-sub">Mean 0.36 vs 0.18 per encounter</div>
+  </div>
+  <div class="metric-card amber fade-up fade-up-3">
+    <div class="metric-icon amber"><i data-feather="navigation"></i></div>
+    <div class="metric-value">27.7%</div>
+    <div class="metric-label">Highest Discharge Readmission</div>
+    <div class="metric-sub">Transfer to rehab facility</div>
+  </div>
+  <div class="metric-card purple fade-up fade-up-4">
+    <div class="metric-icon purple"><i data-feather="heart"></i></div>
+    <div class="metric-value">15.4%</div>
+    <div class="metric-label">Highest Specialty Rate</div>
+    <div class="metric-sub">Nephrology  -  highest readmission risk specialty</div>
+  </div>
+</div>
+
+<!-- ── Section 1: Prior Utilisation ─────────────────────────── -->
+<div class="section-divider fade-up">
+  <div class="section-divider-line"></div>
+  <div class="section-divider-text">§ 1 · Prior Utilisation  -  The Dominant Signal</div>
+  <div class="section-divider-line"></div>
+</div>
+
+<div class="grid-2 mb-28 fade-up">
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Feature Correlations with 30-Day Readmission</div>
+      <div class="card-subtitle">Pearson correlation  -  number_inpatient dominates 4×</div>
+    </div>
+    <div class="card-body">
+      <div class="chart-box">
+        <canvas id="corrChart"></canvas>
+      </div>
+    </div>
+    <div class="card-footer">
+      <strong>Key insight:</strong> number_inpatient has 4× the correlation of any other feature  -  it is the dominant predictive signal.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Readmission Rate by Prior Inpatient Stays</div>
+      <div class="card-subtitle">Rate rises from 8.4% → 30.7% with more prior stays</div>
+    </div>
+    <div class="card-body">
+      <div class="chart-box">
+        <canvas id="inpatientChart"></canvas>
+      </div>
+    </div>
+    <div class="card-footer">
+      Patients with 4+ prior inpatient stays have a <strong>30.7%</strong> readmission rate  -  vs 8.4% for zero prior stays.
+    </div>
+  </div>
+
+</div>
+
+<!-- Utilisation comparison table -->
+<div class="card mb-28 fade-up">
+  <div class="card-header">
+    <div class="card-title">Mean Utilisation Metrics by Readmission Status</div>
+    <div class="card-subtitle">Readmitted vs Not Readmitted  -  mean values</div>
+  </div>
+  <div class="card-body">
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th>Not Readmitted (mean)</th>
+            <th>Readmitted &lt;30d (mean)</th>
+            <th>Difference</th>
+            <th>% Difference</th>
+            <th>Signal Strength</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in utilisation %}
+          <tr>
+            <td style="font-weight:600;">{{ r.metric }}</td>
+            <td class="text-mono text-sm">{{ "%.3f"|format(r.not_readmitted) }}</td>
+            <td class="text-mono text-sm" style="color:var(--red);font-weight:600;">{{ "%.3f"|format(r.readmitted) }}</td>
+            <td class="text-mono text-sm">+{{ "%.3f"|format(r.readmitted - r.not_readmitted) }}</td>
+            <td>
+              <span class="badge {% if r.pct_diff > 50 %}badge-red{% elif r.pct_diff > 10 %}badge-amber{% else %}badge-gray{% endif %}">
+                +{{ "%.1f"|format(r.pct_diff) }}%
+              </span>
+            </td>
+            <td>
+              <div class="progress-bar-wrap" style="width:100px;display:inline-block;">
+                <div class="progress-bar" style="width:{{ [r.pct_diff, 120]|min / 1.2|round|int }}%;background:{% if r.pct_diff > 50 %}var(--red){% elif r.pct_diff > 10 %}var(--amber){% else %}var(--blue){% endif %};"></div>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── Section 2: Discharge Patterns ─────────────────────────── -->
+<div class="section-divider fade-up">
+  <div class="section-divider-line"></div>
+  <div class="section-divider-text">§ 2 · Admission &amp; Discharge Patterns</div>
+  <div class="section-divider-line"></div>
+</div>
+
+<div class="grid-2 mb-28 fade-up">
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Readmission Rate by Discharge Disposition</div>
+      <div class="card-subtitle">Transfer destinations vs home discharge  -  major variation</div>
+    </div>
+    <div class="card-body">
+      <div class="chart-box-lg">
+        <canvas id="dischargeChart"></canvas>
+      </div>
+    </div>
+    <div class="card-footer">
+      <strong>Finding:</strong> Transfers to rehab facilities (27.7%) have 3× the readmission rate of patients discharged home (9.3%).
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Readmission Rate by Medical Specialty</div>
+      <div class="card-subtitle">Specialties with &gt;500 encounters</div>
+    </div>
+    <div class="card-body">
+      <div class="chart-box-lg">
+        <canvas id="specialtyChart"></canvas>
+      </div>
+    </div>
+    <div class="card-footer">
+      <strong>Finding:</strong> Nephrology (15.4%) leads. Cardiology (7.9%) is well below average  -  reflecting structured cardiac care protocols.
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Section 3: Clinical Complexity ───────────────────────── -->
+<div class="section-divider fade-up">
+  <div class="section-divider-line"></div>
+  <div class="section-divider-text">§ 3 · Clinical Complexity &amp; Diagnosis</div>
+  <div class="section-divider-line"></div>
+</div>
+
+<div class="grid-2 mb-28 fade-up">
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Readmission Rate by Primary Diagnosis</div>
+      <div class="card-subtitle">ICD-9 grouped into clinical categories</div>
+    </div>
+    <div class="card-body">
+      <div class="chart-box">
+        <canvas id="diagChart"></canvas>
+      </div>
+    </div>
+    <div class="card-footer">
+      <strong>Diabetes as primary diagnosis</strong> has the highest readmission rate (13.0%)  -  16% above the overall average.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Demographics vs Readmission Rate</div>
+      <div class="card-subtitle">Race &amp; Gender  -  minimal variation</div>
+    </div>
+    <div class="card-body">
+      <div class="callout amber mb-16">
+        <svg class="callout-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <div>
+          <div class="callout-title">Weak Demographic Signal</div>
+          <div class="callout-body">Race and gender show minimal variation in readmission rates (all within 11–11.3%). These are weak standalone predictors.</div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Group</th><th>Readmission Rate</th><th>vs Avg (11.2%)</th></tr></thead>
+          <tbody>
+            {% for grp, rate in [("Caucasian","11.3%"),("African American","11.2%"),("Hispanic","10.4%"),("Asian","10.1%"),("Other","9.6%"),("Female","11.2%"),("Male","11.1%")] %}
+            <tr>
+              <td>{{ grp }}</td>
+              <td class="text-mono text-sm">{{ rate }}</td>
+              <td><span class="badge badge-gray">≈ avg</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Key Findings Summary ──────────────────────────────────── -->
+<div class="card fade-up">
+  <div class="card-header">
+    <div class="card-title">EDA Key Findings  -  Ranked by Signal Strength</div>
+    <div class="card-subtitle">Feature implications for modelling</div>
+  </div>
+  <div class="card-body">
+    <div class="grid-2" style="gap:12px;">
+      {% for f in key_findings %}
+      <div class="insight-tile">
+        <div class="insight-rank" style="opacity:0.25;">{{ f.rank }}</div>
+        <div class="insight-icon"><i data-feather="{{ f.icon }}"></i></div>
+        <div>
+          <div class="insight-title">{{ f.feature }}</div>
+          <div class="insight-finding">{{ f.finding }}</div>
+          <div class="insight-impl">→ {{ f.implication }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const BLUE  = '#0EA5E9';
+const RED   = '#EF4444';
+const AMBER = '#F59E0B';
+const GREEN = '#22C55E';
+const GRAY  = '#94A3B8';
+const AVG_LINE_COLOR = 'rgba(148,163,184,0.7)';
+
+// Correlation chart
+fetch('/api/chart/correlation')
+  .then(r=>r.json()).then(data=>{
+    const sorted = [...data].sort((a,b)=>a.corr-b.corr);
+    new Chart(document.getElementById('corrChart'),{
+      type:'bar',
+      data:{
+        labels: sorted.map(d=>d.feature),
+        datasets:[{
+          data: sorted.map(d=>d.corr),
+          backgroundColor: sorted.map(d=>d.corr>0?BLUE:RED),
+          borderRadius:4,
+          borderSkipped:false,
+        }]
+      },
+      options:{
+        indexAxis:'y', responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{display:false}},
+        scales:{
+          x:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{callback:v=>v.toFixed(3)}},
+          y:{grid:{display:false},ticks:{font:{family:"'DM Mono', monospace",size:11}}}
+        }
+      }
+    });
+  });
+
+// Inpatient rate chart
+fetch('/api/chart/inpatient_rate')
+  .then(r=>r.json()).then(data=>{
+    new Chart(document.getElementById('inpatientChart'),{
+      type:'bar',
+      data:{
+        labels: data.map(d=>`${d.group} prior stays`),
+        datasets:[{
+          label:'Readmission Rate',
+          data: data.map(d=>d.rate),
+          backgroundColor:[BLUE,AMBER,AMBER,RED,RED],
+          borderRadius:6, borderSkipped:false,
+        }]
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false}},
+        scales:{
+          y:{beginAtZero:true,max:35,grid:{color:'rgba(0,0,0,0.05)'},ticks:{callback:v=>v+'%'}},
+          x:{grid:{display:false}}
+        },
+        plugins:{
+          annotation:{
+            annotations:{
+              line1:{type:'line',yMin:11.2,yMax:11.2,borderColor:GRAY,borderWidth:1.5,borderDash:[4,4]}
+            }
+          }
+        }
+      }
+    });
+  });
+
+// Discharge chart
+fetch('/api/chart/discharge_rates')
+  .then(r=>r.json()).then(data=>{
+    const sorted=[...data].sort((a,b)=>b.rate-a.rate);
+    new Chart(document.getElementById('dischargeChart'),{
+      type:'bar',
+      data:{
+        labels:sorted.map(d=>d.label),
+        datasets:[{
+          data:sorted.map(d=>d.rate),
+          backgroundColor:sorted.map(d=>d.rate>11.2?RED:BLUE),
+          borderRadius:4,borderSkipped:false,
+        }]
+      },
+      options:{
+        indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false}},
+        scales:{
+          x:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{callback:v=>v+'%'},max:32},
+          y:{grid:{display:false},ticks:{font:{size:11}}}
+        }
+      }
+    });
+  });
+
+// Specialty chart
+fetch('/api/chart/specialty_rates')
+  .then(r=>r.json()).then(data=>{
+    const sorted=[...data].sort((a,b)=>b.rate-a.rate);
+    new Chart(document.getElementById('specialtyChart'),{
+      type:'bar',
+      data:{
+        labels:sorted.map(d=>d.specialty),
+        datasets:[{
+          data:sorted.map(d=>d.rate),
+          backgroundColor:sorted.map(d=>d.rate>11.2?RED:BLUE),
+          borderRadius:4,borderSkipped:false,
+        }]
+      },
+      options:{
+        indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false}},
+        scales:{
+          x:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{callback:v=>v+'%'},max:18},
+          y:{grid:{display:false},ticks:{font:{size:11}}}
+        }
+      }
+    });
+  });
+
+// Diagnosis chart
+fetch('/api/chart/diag_rates')
+  .then(r=>r.json()).then(data=>{
+    const sorted=[...data].sort((a,b)=>b.rate-a.rate);
+    new Chart(document.getElementById('diagChart'),{
+      type:'bar',
+      data:{
+        labels:sorted.map(d=>d.category),
+        datasets:[{
+          data:sorted.map(d=>d.rate),
+          backgroundColor:sorted.map(d=>d.rate>11.2?RED:BLUE),
+          borderRadius:6,borderSkipped:false,
+        }]
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false}},
+        scales:{
+          y:{beginAtZero:true,max:16,grid:{color:'rgba(0,0,0,0.05)'},ticks:{callback:v=>v+'%'}},
+          x:{grid:{display:false}}
+        }
+      }
+    });
+  });
+</script>
+{% endblock %}
