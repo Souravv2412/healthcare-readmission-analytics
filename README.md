@@ -2,6 +2,10 @@
 
 End-to-end healthcare analytics capstone project using the Diabetes 130-US Hospitals dataset to identify patients at high risk of readmission within 30 days.
 
+## Live Project
+- Web App: [https://healthcare-readmission-analytics.onrender.com](https://healthcare-readmission-analytics.onrender.com)
+- Repository: [https://github.com/Souravv2412/healthcare-readmission-analytics](https://github.com/Souravv2412/healthcare-readmission-analytics)
+
 ## Why This Project Matters
 - Hospital readmissions increase clinical risk and cost.
 - The dataset is highly imbalanced (~11% positive class), so model design and evaluation must prioritize `Recall`, `PR-AUC`, and `ROC-AUC` over raw accuracy.
@@ -56,6 +60,12 @@ python app.py
 ```
 
 Open: `http://127.0.0.1:5000`
+
+## Team
+- [Souravdeep Singh](https://github.com/Souravv2412)
+- [Aum Gajjar](https://github.com/Aum-gajjar)
+- [Priyanka Sharma](https://github.com/Priyanka-Sharma20)
+- [Sakshi Thakur](https://github.com/sakshiithakur26)
 
 ## Notes
 - All em dashes were removed from app/notebook text for a cleaner, natural writing style.
