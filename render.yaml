@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: healthcare-readmission-analytics
+    env: python
+    plan: free
+    rootDir: healthcare_app
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
