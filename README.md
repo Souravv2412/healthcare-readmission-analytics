@@ -43,28 +43,28 @@ Detailed execution flow is documented in:
 If the live app is temporarily unavailable, use these README screenshots and the findings images above as reference.
 
 ### 1) Home (`/`)
-![Home page](https://image.thum.io/get/width/1200/crop/900/https://healthcare-readmission-analytics.onrender.com/)
+![Home page](https://image.thum.io/get/width/1600/crop/1800/https://healthcare-readmission-analytics.onrender.com/)
 
 ### 2) Data Audit (`/audit`)
-![Audit page](https://image.thum.io/get/width/1200/crop/900/https://healthcare-readmission-analytics.onrender.com/audit)
+![Data Audit page](https://image.thum.io/get/width/1600/crop/1800/https://healthcare-readmission-analytics.onrender.com/audit)
 
 ### 3) Data Cleaning (`/cleaning`)
-![Cleaning page](https://image.thum.io/get/width/1200/crop/900/https://healthcare-readmission-analytics.onrender.com/cleaning)
+![Cleaning page](https://image.thum.io/get/width/1600/crop/1800/https://healthcare-readmission-analytics.onrender.com/cleaning)
 
 ### 4) EDA (`/eda`)
-![EDA page](https://image.thum.io/get/width/1200/crop/900/https://healthcare-readmission-analytics.onrender.com/eda)
+![EDA page](https://image.thum.io/get/width/1600/crop/1800/https://healthcare-readmission-analytics.onrender.com/eda)
 
 ### 5) Hypothesis Testing (`/hypothesis`)
-![Hypothesis page](https://image.thum.io/get/width/1200/crop/900/https://healthcare-readmission-analytics.onrender.com/hypothesis)
+![Hypothesis page](https://image.thum.io/get/width/1600/crop/1800/https://healthcare-readmission-analytics.onrender.com/hypothesis)
 
 ### 6) Model Comparison (`/models`)
-![Models page](https://image.thum.io/get/width/1200/crop/900/https://healthcare-readmission-analytics.onrender.com/models)
+![Models page](https://image.thum.io/get/width/1600/crop/1800/https://healthcare-readmission-analytics.onrender.com/models)
 
 ### 7) Predictor (`/predict`)
-![Predictor page](https://image.thum.io/get/width/1200/crop/900/https://healthcare-readmission-analytics.onrender.com/predict)
+![Predictor page](https://image.thum.io/get/width/1600/crop/1800/https://healthcare-readmission-analytics.onrender.com/predict)
 
 ### 8) About (`/about`)
-![About page](https://image.thum.io/get/width/1200/crop/900/https://healthcare-readmission-analytics.onrender.com/about)
+![About page](https://image.thum.io/get/width/1600/crop/1800/https://healthcare-readmission-analytics.onrender.com/about)
 
 ## Repository Structure
 ```text
