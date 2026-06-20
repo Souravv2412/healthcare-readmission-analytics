@@ -43,7 +43,7 @@ Detailed execution flow is documented in:
 If the live app is temporarily unavailable, use these README screenshots and the findings images above as reference.
 
 ### 1) Home (`/`)
-![Home page](https://image.thum.io/get/width/1600/crop/1800/https://healthcare-readmission-analytics.onrender.com/)
+![Home page](https://github.com/Souravv2412/healthcare-readmission-analytics/blob/main/images/Scrennshot/Home.png)
 
 ### 2) Data Audit (`/audit`)
 ![Data Audit page](https://image.thum.io/get/width/1600/crop/1800/https://healthcare-readmission-analytics.onrender.com/audit)
