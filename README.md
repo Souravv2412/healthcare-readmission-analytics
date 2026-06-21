@@ -46,25 +46,25 @@ If the live app is temporarily unavailable, use these README screenshots and the
 ![Home page](https://github.com/Souravv2412/healthcare-readmission-analytics/blob/main/images/Scrennshot/Home.png)
 
 ### 2) Data Audit (`/audit`)
-![Data Audit page](https://image.thum.io/get/width/1600/crop/1800/https://healthcare-readmission-analytics.onrender.com/audit)
+![Data Audit page](https://github.com/Souravv2412/healthcare-readmission-analytics/blob/main/images/Scrennshot/Data%20Audit.png)
 
 ### 3) Data Cleaning (`/cleaning`)
-![Cleaning page](https://image.thum.io/get/width/1600/crop/1800/https://healthcare-readmission-analytics.onrender.com/cleaning)
+![Cleaning page](https://github.com/Souravv2412/healthcare-readmission-analytics/blob/main/images/Scrennshot/Data%20Cleaning.png)
 
 ### 4) EDA (`/eda`)
-![EDA page](https://image.thum.io/get/width/1600/crop/1800/https://healthcare-readmission-analytics.onrender.com/eda)
+![EDA page](https://github.com/Souravv2412/healthcare-readmission-analytics/blob/main/images/Scrennshot/EDA.png)
 
 ### 5) Hypothesis Testing (`/hypothesis`)
-![Hypothesis page](https://image.thum.io/get/width/1600/crop/1800/https://healthcare-readmission-analytics.onrender.com/hypothesis)
+![Hypothesis page](https://github.com/Souravv2412/healthcare-readmission-analytics/blob/main/images/Scrennshot/Hypothesis%20Tests.png)
 
 ### 6) Model Comparison (`/models`)
-![Models page](https://image.thum.io/get/width/1600/crop/1800/https://healthcare-readmission-analytics.onrender.com/models)
+![Models page](https://github.com/Souravv2412/healthcare-readmission-analytics/blob/main/images/Scrennshot/ML%20Models.png)
 
 ### 7) Predictor (`/predict`)
-![Predictor page](https://image.thum.io/get/width/1600/crop/1800/https://healthcare-readmission-analytics.onrender.com/predict)
+![Predictor page](https://github.com/Souravv2412/healthcare-readmission-analytics/blob/main/images/Scrennshot/Risk%20Predictor.png)
 
-### 8) About (`/about`)
-![About page](https://image.thum.io/get/width/1600/crop/1800/https://healthcare-readmission-analytics.onrender.com/about)
+### 8) Methodology (`/Methodology`)
+![Methodology](https://github.com/Souravv2412/healthcare-readmission-analytics/blob/main/images/Scrennshot/Methodology.png)
 
 ## Repository Structure
 ```text
